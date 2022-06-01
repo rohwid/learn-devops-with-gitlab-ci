@@ -1,0 +1,46 @@
+image: ubuntu:latest
+
+stages:
+  - build
+  - test
+  - ship
+
+variables:
+  BUILD_FILE_NAME: computer.txt
+
+build-job:
+  stage: build
+  script:
+    - mkdir build
+    - touch build/BUILD_FILE_NAME
+    - echo "Build the computer..."
+    - echo "- CPU" >> build/BUILD_FILE_NAME
+    - echo "- Mainboard" >> build/BUILD_FILE_NAME
+    - echo "- RAM" >> build/BUILD_FILE_NAME
+    - echo "- SSD" >> build/BUILD_FILE_NAME
+    - echo "- Monitor" >> build/BUILD_FILE_NAME
+    - echo "- Keyboard" >> build/BUILD_FILE_NAME
+    - echo "- Mouse" >> build/BUILD_FILE_NAME
+    - echo "- Ubuntu 22.04" >> build/BUILD_FILE_NAME
+    - echo "- Nvidia Driver" >> build/BUILD_FILE_NAME
+    - echo "- Docker" >> build/BUILD_FILE_NAME
+    - echo "Build complete."
+  artifacts:
+    paths:
+      - build
+
+test-job:
+  stage: test
+  script:
+    - echo "Checking the components... This will take about 10 seconds."
+    - test -f build/BUILD_FILE_NAME 
+    - cat build/BUILD_FILE_NAME
+
+ship-job:
+  stage: ship
+  script:
+    - echo "shiping the computer..."
+    - mkdir ship
+    - cp build/BUILD_FILE_NAME ship
+    - echo "The computer successfully shiped."
+    - cat ship/BUILD_FILE_NAME
