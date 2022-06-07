@@ -137,8 +137,6 @@ stages:                 # List of stages for jobs, and their order of execution
   - build
   - test
   - deploy
-
-...
 ```
 
 ## **Pipeline Environment Variables**
@@ -155,8 +153,6 @@ stages:                 # List of stages for jobs, and their order of execution
   - build
   - test
   - deploy
-
-...
 ```
 
 Or define with the GitLab repository setting in `Settings > CI/CD > Variable > Collapse`. You can set the variable into two modes like:
@@ -360,12 +356,17 @@ Check the [docs](https://docs.gitlab.com/ee/ci/caching/) to setup the cache.
 
 # **Setup CI/CD for the Project that Runs in Background**
 
-For example, a backend program that runs in `http://localhost:3000`.
+Here the example of the stages that we do previously:
+  + Build in the `build` stage (ex: `build website` or `build-job`).
+  + linter test in the `test` stage (ex: `linter` or `linter-test-job`).
+  + Unit test in the `test` stage (ex: `unit test` or `unit-test-job`).
+
+Now we will do website test stage (ex: `test website` or `test-website-job`). For example, this is a backend program that runs in `http://localhost:3000`.
 
 + Add `&` parameter in the end running program. For example:
 
   ```
-  python app.py &
+  python endpoint.py &
   ```
 
 + Add the delay after the program execution, because of the `curl` will execute imediately after the program execute and didn't make sure the program running well or not.
@@ -380,10 +381,24 @@ For example, a backend program that runs in `http://localhost:3000`.
   curl http://localhost:5000 | grep  "data"
   ```
 
+  So, the complete stage will be like this:
+
+  ```
+  test website:
+    image: python:latest
+    stage: test
+    script:
+      - pip install -r requirements.txt
+      - apt install curl -y
+      - python endpoint.py &
+      - sleep 10
+      - curl http://localhost:5000 | grep "Flask App"
+  ```
+
 + AWS CLI in pipeline, this is example how to gonna use AWS CLI in Gitlab CI pipeline.
   
   ```
-  deploy_to_s3:
+  deploy to s3:
     stage: deploy
     image:
       name: amazon/aws-cli:2.4.11
@@ -427,15 +442,17 @@ For example, a backend program that runs in `http://localhost:3000`.
   ```
 
 + Static website hosting on AWS S3 (So.. WOW).
-  + Access and edit in menu `S3 > Properties > Static Website Hosting` and `Enable`.
+  + Access and edit in menu **S3 > Properties > Static Website Hosting** and **Enable**.
   + Set the index document and error document.
   + Now enter again into the `Static Website Hosting`. There a website static hosting URL but it still can't be access if you click on it.
   + Go to `permission` tab and disable all the **Block Public Access** and **Edit** the **Bucket Policy** .
     + Search and add the bucket action to `GetObject` or `"S3:GetObject"`.
     + Change the `Sid` value into `PublicRead` or `"Sid": "PublicRead"`.
     + Change the `Principal` value into `*` or `"Principal": "*"`.
-    + chenge the `Effect` value into `Allow` or `"Effect": "Allow"`.
+    + Chenge the `Effect` value into `Allow` or `"Effect": "Allow"`.
     + Change the `Resource` value into **aws bucket name** for example `"Resource": "arn:aws:s3:::valentin-20220118/*"`.
+    + Now, you can access the static web hosting with AWS S3.
+  
 + Add the `rules` params in `.gitlab-ci.yml` with this script and fill it with **Predefined variable refference**. So, it gonna make the currnet pipeline state will only execute in the main branch.
 
   ```
@@ -446,7 +463,7 @@ For example, a backend program that runs in `http://localhost:3000`.
   So, in the GitLab config:
 
   ```
-  deploy_to_s3:
+  deploy to s3:
     stage: deploy
     image:
       name: amazon/aws-cli:2.4.11
@@ -458,3 +475,24 @@ For example, a backend program that runs in `http://localhost:3000`.
       - echo "Hello S3" > test.txt
       - aws s3 sync build/ s3://$AWS_S3_BUCKET --delete
   ```
+
++ After deployed to the production, then add the `production test`. Before it, please define the `variables` like mentioned in **Pipeline Environment Variables** and add the **AWS S3 Static Web Hosting**.
+
+  + Here is the variable example:
+
+    ```
+    variables:
+      APP_BASE_URL: http://(aws-s3-static-web-hosting-url)
+    ```
+
+  + Now create the `production test` in the `post deploy` stages.
+
+    ```
+    production test:
+      image: curlimages/curl
+      stage: post deploy
+      rules:
+        - if: $CLI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      script:
+        - curl $APP_BASE_URL| grep "Flask App"
+    ```
