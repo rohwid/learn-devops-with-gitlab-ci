@@ -161,7 +161,7 @@ stages:                 # List of stages for jobs, and their order of execution
 
 Or define with the GitLab repository setting in `Settings > CI/CD > Variable > Collapse`. You can set the variable into two modes like:
 
-+ **Protected**: Only can be run in the current branch.
++ **Protected**: Only can be use in the current protected branch.
 + **Masked**: Hide or encrypt the variable.
 
 # **GitLab Runner**
@@ -357,3 +357,104 @@ Check the [docs](https://docs.gitlab.com/ee/ci/caching/) to setup the cache.
 + That setting allow us to manage the repository easier, just the `main` branch and the **deployed version**.
 
 <img src="img/github-semantic-branches.svg" width="1000"/>
+
+# **Setup CI/CD for the Project that Runs in Background**
+
+For example, a backend program that runs in `http://localhost:3000`.
+
++ Add `&` parameter in the end running program. For example:
+
+  ```
+  python app.py &
+  ```
+
++ Add the delay after the program execution, because of the `curl` will execute imediately after the program execute and didn't make sure the program running well or not.
+
+  ```
+  sleep 10
+  ```
+
++ Test the output with `curl`. For example:
+
+  ```
+  curl http://localhost:5000 | grep  "data"
+  ```
+
++ AWS CLI in pipeline, this is example how to gonna use AWS CLI in Gitlab CI pipeline.
+  
+  ```
+  deploy_to_s3:
+    stage: deploy
+    image:
+      name: amazon/aws-cli:2.4.11
+      entrypoint: [""]
+    script:
+      - aws --version
+  ```
+
++ Masking and protecting the variables, this part already explained in **Pipeline Environment Variables** section. So, you don't need to write the variable in `.gitlab-ci.yml`, you just need to call the variable like this example:
+
+  ```
+  deploy_to_s3:
+    stage: deploy
+    image:
+      name: amazon/aws-cli:2.4.11
+      entrypoint: [""]
+    script:
+      - aws --version
+      - echo "Hello S3" > test.txt
+      - aws s3 cp test.txt s3://$AWS_S3_BUCKET/test.txt
+  ```
+
++ Add the AWS credential in **Pipeline Environment Variables** like this:
+  + `AWS_S3_BUCKET` and disable protected branches.
+  + `AWS_ACCESS_KEY_ID` and disable protected branches.
+  + `AWS_SECRET_ACCESS_KEY` then disable the protected branches and masked the value.
+  + `AWS_DEFAULT_REGION` and disable protected branches.
+
++ Upload multiple files into AWS S3 and delete it with `sync` command from AWS CLI.
+
+  ```
+  deploy_to_s3:
+    stage: deploy
+    image:
+      name: amazon/aws-cli:2.4.11
+      entrypoint: [""]
+    script:
+      - aws --version
+      - echo "Hello S3" > test.txt
+      - aws s3 sync build/ s3://$AWS_S3_BUCKET --delete
+  ```
+
++ Static website hosting on AWS S3 (So.. WOW).
+  + Access and edit in menu `S3 > Properties > Static Website Hosting` and `Enable`.
+  + Set the index document and error document.
+  + Now enter again into the `Static Website Hosting`. There a website static hosting URL but it still can't be access if you click on it.
+  + Go to `permission` tab and disable all the **Block Public Access** and **Edit** the **Bucket Policy** .
+    + Search and add the bucket action to `GetObject` or `"S3:GetObject"`.
+    + Change the `Sid` value into `PublicRead` or `"Sid": "PublicRead"`.
+    + Change the `Principal` value into `*` or `"Principal": "*"`.
+    + chenge the `Effect` value into `Allow` or `"Effect": "Allow"`.
+    + Change the `Resource` value into **aws bucket name** for example `"Resource": "arn:aws:s3:::valentin-20220118/*"`.
++ Add the `rules` params in `.gitlab-ci.yml` with this script and fill it with **Predefined variable refference**. So, it gonna make the currnet pipeline state will only execute in the main branch.
+
+  ```
+  rules:
+      - if: $CLI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+  ```
+
+  So, in the GitLab config:
+
+  ```
+  deploy_to_s3:
+    stage: deploy
+    image:
+      name: amazon/aws-cli:2.4.11
+      entrypoint: [""]
+    rules:
+      - if: $CLI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+    script:
+      - aws --version
+      - echo "Hello S3" > test.txt
+      - aws s3 sync build/ s3://$AWS_S3_BUCKET --delete
+  ```
