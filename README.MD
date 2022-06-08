@@ -76,6 +76,17 @@ That proccess never stop, it goes on and on in an endless loop. It mean we conti
 + To check the visualiztion of CI/CD, check the **Visualize** tab.
 + To check the correct syntax, check the **Lint** tab.
 
+## **What is CI/CD?**
+
+### **CI (Continous Integration)**
++ There are steps for **build** and **test**, that called by Continous Integration.
+
+### **CD (Continous Deployment)** 
++ After the CI process, continue to deploy in the staging server and continue to the production server.
+
+### **CD (Continous Delivery)** 
++ After the CI process, continue to deploy in the staging server and taking action before deploy to the production server.
+
 ## **Setup Pipeline from Editor into the Visualize**
 
 Here is the example of pipeline script in `.gitlab-ci.yml` that can edit from the Editor.
@@ -496,3 +507,4 @@ Now we will do website test stage (ex: `test website` or `test-website-job`). Fo
       script:
         - curl $APP_BASE_URL| grep "Flask App"
     ```
+
