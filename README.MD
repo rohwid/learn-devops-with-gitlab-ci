@@ -372,6 +372,16 @@ Here the example of the stages that we do previously:
   + linter test in the `test` stage (ex: `linter` or `linter-test-job`).
   + Unit test in the `test` stage (ex: `unit test` or `unit-test-job`).
 
+And here the `stages`, that what we will do.
+
+```
+stages:
+  - build
+  - test
+  - deploy production
+  - test production
+ ```
+
 Now we will do website test stage (ex: `test website` or `test-website-job`). For example, this is a backend program that runs in `http://localhost:3000`.
 
 + Add `&` parameter in the end running program. For example:
@@ -409,8 +419,8 @@ Now we will do website test stage (ex: `test website` or `test-website-job`). Fo
 + AWS CLI in pipeline, this is example how to gonna use AWS CLI in Gitlab CI pipeline.
   
   ```
-  deploy to s3:
-    stage: deploy
+  deploy to production:
+    stage: deploy production
     image:
       name: amazon/aws-cli:2.4.11
       entrypoint: [""]
@@ -421,8 +431,8 @@ Now we will do website test stage (ex: `test website` or `test-website-job`). Fo
 + Masking and protecting the variables, this part already explained in **Pipeline Environment Variables** section. So, you don't need to write the variable in `.gitlab-ci.yml`, you just need to call the variable like this example:
 
   ```
-  deploy_to_s3:
-    stage: deploy
+  deploy to production:
+    stage: deploy production
     image:
       name: amazon/aws-cli:2.4.11
       entrypoint: [""]
@@ -441,8 +451,8 @@ Now we will do website test stage (ex: `test website` or `test-website-job`). Fo
 + Upload multiple files into AWS S3 and delete it with `sync` command from AWS CLI.
 
   ```
-  deploy_to_s3:
-    stage: deploy
+  deploy to production:
+    stage: deploy production
     image:
       name: amazon/aws-cli:2.4.11
       entrypoint: [""]
@@ -457,14 +467,14 @@ Now we will do website test stage (ex: `test website` or `test-website-job`). Fo
   + Set the index document and error document.
   + Now enter again into the `Static Website Hosting`. There a website static hosting URL but it still can't be access if you click on it.
   + Go to `permission` tab and disable all the **Block Public Access** and **Edit** the **Bucket Policy** .
-    + Search and add the bucket action to `GetObject` or `"S3:GetObject"`.
-    + Change the `Sid` value into `PublicRead` or `"Sid": "PublicRead"`.
-    + Change the `Principal` value into `*` or `"Principal": "*"`.
-    + Chenge the `Effect` value into `Allow` or `"Effect": "Allow"`.
-    + Change the `Resource` value into **aws bucket name** for example `"Resource": "arn:aws:s3:::valentin-20220118/*"`.
+    + Search and add the bucket action to `GetObject` (for example: `"S3:GetObject"`).
+    + Change the `Sid` value into `PublicRead` (for example: `"Sid": "PublicRead"`).
+    + Change the `Principal` value into `*` (for example: `"Principal": "*"`).
+    + Chenge the `Effect` value into `Allow` (for example: `"Effect": "Allow"`).
+    + Change the `Resource` value into **aws bucket name** (for example: `"Resource": "arn:aws:s3:::(aws-s3-bucket-name)/*"`).
     + Now, you can access the static web hosting with AWS S3.
   
-+ Add the `rules` params in `.gitlab-ci.yml` with this script and fill it with **Predefined variable refference**. So, it gonna make the currnet pipeline state will only execute in the main branch.
++ Add the `rules` params in `.gitlab-ci.yml` with this script and fill it with [**Predefined variable refference**](https://docs.gitlab.com/ee/ci/variables/predefined_variables.html). So, it gonna make the currnet pipeline state will only execute in the main branch.
 
   ```
   rules:
@@ -474,8 +484,8 @@ Now we will do website test stage (ex: `test website` or `test-website-job`). Fo
   So, in the GitLab config:
 
   ```
-  deploy to s3:
-    stage: deploy
+  deploy to production:
+    stage: deploy production
     image:
       name: amazon/aws-cli:2.4.11
       entrypoint: [""]
@@ -499,12 +509,163 @@ Now we will do website test stage (ex: `test website` or `test-website-job`). Fo
   + Now create the `production test` in the `post deploy` stages.
 
     ```
-    production test:
+    production tests:
       image: curlimages/curl
-      stage: post deploy
+      stage: test production
       rules:
         - if: $CLI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       script:
-        - curl $APP_BASE_URL| grep "Flask App"
+        - curl $APP_BASE_URL | grep "Flask App"
     ```
 
++ Add the staging server to deploy.
+  + Add new stage that named `deploy staging` and `test staging`.
+
+    ```
+    stages:
+      - build
+      - test
+      - deploy staging
+      - test staging
+      - deploy production
+      - test production
+    ```
+
+  + Copy the production stage and change it into staging.
+
+    ```
+    deploy to staging:
+      stage: deploy staging
+      image:
+        name: amazon/aws-cli:2.4.11
+        entrypoint: [""]
+      rules:
+        - if: $CLI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      script:
+        - aws --version
+        - echo "Hello S3" > test.txt
+        - aws s3 sync build/ s3://$AWS_S3_BUCKET_STAGING --delete
+    ```
+
+    And for the testing in staging.
+
+    ```
+    staging tests:
+      image: curlimages/curl
+      stage: test staging
+      rules:
+        - if: $CLI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      script:
+        - curl $APP_BASE_URL | grep "Flask App"
+    ```
+
+  + And here is the variable should be:
+
+    ```
+    variables:
+      APP_BASE_URL: http://(aws-s3-production-static-web-hosting-url)
+      APP_BASE_URL_STAGING: http://(aws-s3-staging-static-web-hosting-url)
+    ```
+
+## **Environment**
+
+To enable this feature, enter the GitLab menu in `Deployments > Environments > New environment`.
++ Create the `staging` environment with the `staging` name and fill the external URL: `http://(aws-s3-staging-static-web-hosting-url)`.
++ Create the `production` environment with the `production` name and fill the external URL: `http://(aws-s3-production-static-web-hosting-url)`.
++ Now, remove the variables from `.gilab-ci.yml`.
+
+  ```
+  variables:
+    APP_BASE_URL: http://(aws-s3-production-static-web-hosting-url)
+    APP_BASE_URL_STAGING: http://(aws-s3-staging-static-web-hosting-url)
+  ```
++ Go to **Setting > CI/CD**
+  + Then set the **Variable** into specific **Environment scope** that defined before (`staging` and `production`).
+  + `AWS_S3_BUCKET` into `production`.
+  + rename `AWS_S3_BUCKET_STAGING` into `AWS_S3_BUCKET` into `staging`.
+
++ Modify the stage that define before by deleting the `test staging` and `test production` stages. So, the left stages will be like this.
+
+  ```
+  stages:
+    - build
+    - test
+    - deploy staging
+    - deploy production
+  ```
+
++ Modify the `deploy staging` stage by combining with the `test staging` stage and change the `$APP_BASE_URL` variable into `$CI_ENVIRONMENT_URL` that provide by GitLab on [**Predefined variable refference**](https://docs.gitlab.com/ee/ci/variables/predefined_variables.html) and don't forget to add `environment` variable with `staging` value.
+
+  ```
+  deploy to staging:
+    stage: deploy staging
+    environment: staging
+    image:
+      name: amazon/aws-cli:2.4.11
+      entrypoint: [""]
+    rules:
+      - if: $CLI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+    script:
+      - aws --version
+      - echo "Hello S3" > test.txt
+      - aws s3 sync build/ s3://$AWS_S3_BUCKET --delete
+      - curl $CI_ENVIRONMENT_URL | grep "Flask App"
+  ```
+
++ Modify the `deploy production` stage by combining with the `test production` stage and change the `$AWS_S3_BUCKET_STAGING` variable into `$CI_ENVIRONMENT_URL` that provide by GitLab [**Predefined variable refference**](https://docs.gitlab.com/ee/ci/variables/predefined_variables.html) and don't forget to add `environment` variable with `production` value.
+
+  ```
+  deploy to production:
+    stage: deploy production
+    environment: production
+    image:
+      name: amazon/aws-cli:2.4.11
+      entrypoint: [""]
+    rules:
+      - if: $CLI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+    script:
+      - aws --version
+      - echo "Hello S3" > test.txt
+      - aws s3 sync build/ s3://$CI_ENVIRONMENT_URL --delete
+      - curl $CI_ENVIRONMENT_URL | grep "Flask App"
+  ```
+
+## **Reusing Configuration**
+
+Here are the steps to reusing the configuration.
+
++ Create new stage to reuse the `deploy staging` and the `deploy production`, because that two stages were identical. Don't forget to add `.` in front of the new stages, it means that stages are disabled.
+
+  ```
+  .deploy:
+    image:
+      name: amazon/aws-cli:2.4.11
+      entrypoint: [""]
+    rules:
+      - if: $CLI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+    script:
+      - aws --version
+      - echo "Hello S3" > test.txt
+      - aws s3 sync build/ s3://$CI_ENVIRONMENT_URL --delete
+      - curl $CI_ENVIRONMENT_URL | grep "Flask App"
+  ```
+
++ Now, change the value of the `deploy to staging` and the `deploy to production`.
+
+  For the `deploy to staging`:
+
+  ```
+  deploy to staging:
+    stage: deploy staging
+    environment: staging
+    extends: .deploy
+  ```
+
+  For the `deploy to production`:
+
+  ```
+  deploy to production:
+    stage: deploy production
+    environment: production
+    extends: .deploy
+  ```
