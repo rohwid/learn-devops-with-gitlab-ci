@@ -274,8 +274,6 @@ Check the [docs](https://docs.gitlab.com/ee/ci/caching/) to setup the cache.
     And call all the stages in every pipeline job. So, the script will be like this:
     
     ```
-    ...
-    
     build-job:
     stage: build
     script:
@@ -318,8 +316,6 @@ Check the [docs](https://docs.gitlab.com/ee/ci/caching/) to setup the cache.
     And call the artifact path in the pipeline job that needed. So, the script will be like this:
 
     ```
-    ...
-
     build-job:
     stage: build
     script:
@@ -338,8 +334,6 @@ Check the [docs](https://docs.gitlab.com/ee/ci/caching/) to setup the cache.
     artifacts:
         paths:
         - build
-
-    ...
     ```
 
 + Setup the variables.
@@ -669,3 +663,57 @@ Here are the steps to reusing the configuration.
     environment: production
     extends: .deploy
   ```
+
+## **Add App Build Versions**
+
+Here are the steps to add app buidl version.
+
++ Add `APP_VERSION` variable.
+  
+  ```
+  variables:
+    APP_VERSION: $CI_PIPELINE_IID
+  ```
+
++ Call the `APP_VERSION` variable to the every stages.
+  + Insert the `APP_VERSION` to the `build` stage. The app version also can be check on the artifacts directory, if the artifact variable was enabled.
+
+    ```
+    build website:
+      stage: build
+      script:
+          ...
+          - echo $APP_VERSION > build/version.html
+      artifacts:
+          paths:
+          - build
+    ```
+
+  + Test the build version.
+  
+    ```
+    .deploy:
+      image:
+        name: amazon/aws-cli:2.4.11
+        entrypoint: [""]
+      rules:
+        - if: $CLI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      script:
+        - aws --version
+        - echo "Hello S3" > test.txt
+        - aws s3 sync build/ s3://$CI_ENVIRONMENT_URL --delete
+        - curl $CI_ENVIRONMENT_URL | grep "Flask App"
+        - curl $CI_ENVIRONMENT_URL/version.html | grep $APP_VERSION
+    ```
+
+## **Continous Delivery Pipeline**
+
+Like that mentioned above, the **Contionus Delivery** have step that should be executed before deploy to the production server after successfully deployed to the staging server. In this case, just add `when` variable with value `manual` to the `deploy to production` stage.
+
+```
+deploy to production:
+  stage: deploy production
+  when: manual
+  environment: production
+  extends: .deploy
+```
