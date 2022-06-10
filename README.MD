@@ -357,7 +357,7 @@ Check the [docs](https://docs.gitlab.com/ee/ci/caching/) to setup the cache.
 
 + That setting allow us to manage the repository easier, just the `main` branch and the **deployed version**.
 
-<img src="img/github-semantic-branches.svg" width="1000"/>
+<img src="img/github-semantic-branches.png" width="1000"/>
 
 # **Setup CI/CD for the Project that Runs in Background**
 
