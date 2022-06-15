@@ -472,7 +472,7 @@ Now we will do website test stage (ex: `test website` or `test-website-job`). Fo
 
   ```
   rules:
-      - if: $CLI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
   ```
 
   So, in the GitLab config:
@@ -484,7 +484,7 @@ Now we will do website test stage (ex: `test website` or `test-website-job`). Fo
       name: amazon/aws-cli:2.4.11
       entrypoint: [""]
     rules:
-      - if: $CLI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     script:
       - aws --version
       - echo "Hello S3" > test.txt
@@ -507,7 +507,7 @@ Now we will do website test stage (ex: `test website` or `test-website-job`). Fo
       image: curlimages/curl
       stage: test production
       rules:
-        - if: $CLI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+        - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       script:
         - curl $APP_BASE_URL | grep "Flask App"
     ```
@@ -534,7 +534,7 @@ Now we will do website test stage (ex: `test website` or `test-website-job`). Fo
         name: amazon/aws-cli:2.4.11
         entrypoint: [""]
       rules:
-        - if: $CLI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+        - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       script:
         - aws --version
         - echo "Hello S3" > test.txt
@@ -548,7 +548,7 @@ Now we will do website test stage (ex: `test website` or `test-website-job`). Fo
       image: curlimages/curl
       stage: test staging
       rules:
-        - if: $CLI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+        - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       script:
         - curl $APP_BASE_URL | grep "Flask App"
     ```
@@ -598,7 +598,7 @@ To enable this feature, enter the GitLab menu in `Deployments > Environments > N
       name: amazon/aws-cli:2.4.11
       entrypoint: [""]
     rules:
-      - if: $CLI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     script:
       - aws --version
       - echo "Hello S3" > test.txt
@@ -616,7 +616,7 @@ To enable this feature, enter the GitLab menu in `Deployments > Environments > N
       name: amazon/aws-cli:2.4.11
       entrypoint: [""]
     rules:
-      - if: $CLI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     script:
       - aws --version
       - echo "Hello S3" > test.txt
@@ -636,7 +636,7 @@ Here are the steps to reusing the configuration.
       name: amazon/aws-cli:2.4.11
       entrypoint: [""]
     rules:
-      - if: $CLI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     script:
       - aws --version
       - echo "Hello S3" > test.txt
@@ -697,7 +697,7 @@ Here are the steps to add app buidl version.
         name: amazon/aws-cli:2.4.11
         entrypoint: [""]
       rules:
-        - if: $CLI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+        - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       script:
         - aws --version
         - echo "Hello S3" > test.txt
