@@ -717,3 +717,13 @@ deploy to production:
   environment: production
   extends: .deploy
 ```
+
+## **Best Practice**
+
+Here's my step for best practice:
++ try-gitlab-ci
++ try-variable
++ try-extends
++ try-with-real-project
+  + FE or BE repository
+  + ML repository
