@@ -1,0 +1,88 @@
+stages:
+  - get env
+  - test build
+  - deploy dev
+  - deploy prod
+
+.env:
+  image:
+    name: amazon/aws-cli
+    entrypoint: [""]
+  script:
+    - mkdir env
+    - aws --version
+    - aws s3 cp s3://${AWS_S3_BUCKET}/${ENV_FILE} env/
+  artifacts:
+    paths:
+    - env
+
+.deploy:
+  image: python:3.7-slim
+  before_script:
+  - apt update && apt install openssh-client zip unzip curl gcc -y
+  - pip install -r requirements.txt
+  - eval $(ssh-agent -s)
+  - echo "${SSH_PRIVATE_KEY}" | tr -d '\r' | ssh-add -
+  - mkdir -p ~/.ssh
+  - chmod 700 ~/.ssh
+  - touch setenv.sh
+  - echo export '$(grep -v "^#" env/${ENV_FILE} | xargs)' >> setenv.sh
+  - source setenv.sh
+  script:
+  - cd src
+  - python manage.py db upgrade
+  - cd ..
+  - mkdir -p ~/${PROJECT_DIR}
+  - cp -r ./* ~/${PROJECT_DIR}
+  - cp env/${ENV_FILE} ~/${PROJECT_DIR}/.env
+  - rm -r env && rm -r ~/${PROJECT_DIR}/env
+  - ls -la ~/${PROJECT_DIR}
+  - cd ~ 
+  - zip -r ${PROJECT_DIR}.zip ${PROJECT_DIR} 
+  - scp -o StrictHostKeyChecking=no ~/${PROJECT_DIR}.zip ${AWS_EC2_ADDR}:~
+  - ssh -o StrictHostKeyChecking=no ${AWS_EC2_ADDR} "sudo apt install unzip make curl -y"
+  - ssh -o StrictHostKeyChecking=no ${AWS_EC2_ADDR} "rm -r ~/${PROJECT_DIR}; unzip ~/${PROJECT_DIR}.zip"
+  - ssh -o StrictHostKeyChecking=no ${AWS_EC2_ADDR} "cd ${PROJECT_DIR}; sudo make ${CLEAN_PROJECT}; sudo make ${BUILD_PROJECT}"
+  - sleep 20
+  - curl ${CI_ENVIRONMENT_URL}/hc | grep 1
+
+get dev env:
+  stage: get env
+  environment: dev
+  extends: .env
+
+get prod env:
+  stage: get env
+  environment: prod
+  rules:
+  - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+  extends: .env
+
+build and test:
+  stage: test build
+  environment: staging
+  image: python:3.7-slim
+  before_script:
+  - apt update && apt install make curl -y 
+  - pip install -r requirements.txt
+  - touch setenv.sh
+  - echo export '$(grep -v "^#" env/${ENV_FILE} | xargs)' >> setenv.sh
+  - source setenv.sh
+  script:
+  - chmod +x start.sh
+  - ./start.sh &
+  - sleep 20
+  - curl ${CI_ENVIRONMENT_URL}/hc | grep 1
+
+deploy to dev:
+  stage: deploy dev
+  environment: dev
+  extends: .deploy
+
+deploy to prod:
+  stage: deploy prod
+  when: manual
+  environment: prod
+  rules:
+  - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+  extends: .deploy

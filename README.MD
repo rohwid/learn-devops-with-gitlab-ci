@@ -252,7 +252,13 @@ Define the GitLab runners in GitLab repository setting in `Settings > CI/CD > Va
 
 ## **Setup Runners**
 
-Setup GitLab runner on VM
+Setup GitLab runner on VM or AWS EC2 with the Docker executor, here's the steps.
+
++ Deploy the instance.
++ Install the Docker.
++ Install **the gitlab-ci runner package**.
++ 
+
 
 ## **GitLab CI/CD Cache**
 
@@ -260,7 +266,9 @@ Check the [docs](https://docs.gitlab.com/ee/ci/caching/) to setup the cache.
 
 # **Step by Step GitLab CI**
 
-+ Create the repository `try-gitlab-ci`.
+Here are the steps when trying `gitlab-ci`:
+
++ Create the repository `try-gitlab-ci-1`.
 + Create `.gitlab-ci.yml` file and commit.
 + Create and define the stages.
 
@@ -376,12 +384,32 @@ stages:
   - test production
  ```
 
+Build stages, here are the complete stage for build.
+
+```
+build job:
+  image: node:16-alpine
+  stage: build
+  script:
+    - yarn install 
+    - yarn build
+  artifacts:
+    paths:
+      - build
+```
+
 Now we will do website test stage (ex: `test website` or `test-website-job`). For example, this is a backend program that runs in `http://localhost:3000`.
 
 + Add `&` parameter in the end running program. For example:
 
   ```
   python endpoint.py &
+  ```
+
+  or 
+
+  ```
+  serve -s build &
   ```
 
 + Add the delay after the program execution, because of the `curl` will execute imediately after the program execute and didn't make sure the program running well or not.
@@ -393,21 +421,21 @@ Now we will do website test stage (ex: `test website` or `test-website-job`). Fo
 + Test the output with `curl`. For example:
 
   ```
-  curl http://localhost:5000 | grep  "data"
+  curl http://localhost:3000 | grep  "data"
   ```
 
   So, the complete stage will be like this:
 
   ```
-  test website:
-    image: python:latest
+  test job:
+    image: node:16-alpine
     stage: test
     script:
-      - pip install -r requirements.txt
-      - apt install curl -y
-      - python endpoint.py &
+      - yarn global add serve 
+      - apk add curl
+      - serve -s build &
       - sleep 10
-      - curl http://localhost:5000 | grep "Flask App"
+      - curl http://localhost:3000 | grep "React App"
   ```
 
 + AWS CLI in pipeline, this is example how to gonna use AWS CLI in Gitlab CI pipeline.
@@ -503,7 +531,7 @@ Now we will do website test stage (ex: `test website` or `test-website-job`). Fo
   + Now create the `production test` in the `post deploy` stages.
 
     ```
-    production tests:
+    tests in production:
       image: curlimages/curl
       stage: test production
       rules:
@@ -544,7 +572,7 @@ Now we will do website test stage (ex: `test website` or `test-website-job`). Fo
     And for the testing in staging.
 
     ```
-    staging tests:
+    tests in staging:
       image: curlimages/curl
       stage: test staging
       rules:
@@ -624,7 +652,7 @@ To enable this feature, enter the GitLab menu in `Deployments > Environments > N
       - curl $CI_ENVIRONMENT_URL | grep "Flask App"
   ```
 
-## **Reusing Configuration**
+## **Reusing Configuration or Extends**
 
 Here are the steps to reusing the configuration.
 
@@ -721,9 +749,8 @@ deploy to production:
 ## **Best Practice**
 
 Here's my step for best practice:
-+ try-gitlab-ci
-+ try-variable
-+ try-extends
-+ try-with-real-project
-  + FE or BE repository
-  + ML repository
++ `try-gitlab-ci-1`: learn how to gitlab-ci works
++ `try-gitlab-ci-2`: learn gitlab artifact, gitlab-ci default variable and set local or hardcoded variable.
++ `try-extends-and-variable`: learn to extend stages and use the gitlab-ci variable feature.
++ `try-build-image-versioning`: learn to create the image version of the software or the apps.
++ `try-ml-artifacts`: learn how to setup CI/CD for machine learning.
