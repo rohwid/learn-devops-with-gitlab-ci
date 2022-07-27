@@ -257,8 +257,10 @@ Setup GitLab runner on VM or AWS EC2 with the Docker executor, here's the steps.
 + Deploy the instance.
 + Install the Docker.
 + Install **the gitlab-ci runner package**.
-+ 
-
++ Create group in GitLab.
++ Assign the repository to the group to manage which is need the CI/CDrunner.
++ Edit the gitlab-ci runner config in `/etc/gitlab-runner/config.toml`.
+  + Change the `privileged` paramameter into `true`.
 
 ## **GitLab CI/CD Cache**
 
