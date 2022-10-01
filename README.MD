@@ -753,6 +753,5 @@ deploy to production:
 Here's my step for best practice:
 + `try-gitlab-ci-1`: learn how to gitlab-ci works
 + `try-gitlab-ci-2`: learn gitlab artifact, gitlab-ci default variable and set local or hardcoded variable.
-+ `try-extends-and-variable`: learn to extend stages and use the gitlab-ci variable feature.
-+ `try-build-image-versioning`: learn to create the image version of the software or the apps.
-+ `try-ml-artifacts`: learn how to setup CI/CD for machine learning.
++ `try-extends-and-variable`: learn to extend stages and use the gitlab-ci variable feature. In this directory, I was tried how to depoy with SSH from gitlab runner to the EC2 Instance. 
++ `try-build-image-versioning`: Pending.. Focus on GitHub Action due to the GitLab were not free and to pricy for large project.
